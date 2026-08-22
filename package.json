@@ -1,0 +1,12 @@
+{
+  "name": "app-store-legal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static legal/support pages for App Store Connect review — no build step.",
+  "scripts": {
+    "check:pages": "node scripts/ci-visual-check.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}
