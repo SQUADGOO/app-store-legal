@@ -104,7 +104,11 @@ async function main() {
     for (const file of htmlFiles) {
       const rel = path.relative(ROOT, file);
       const url = `http://localhost:${PORT}/${rel}`;
-      const page = await browser.newPage();
+      for (const viewport of [
+        { name: "desktop", width: 1280, height: 900 },
+        { name: "phone-390", width: 390, height: 844 },
+      ]) {
+      const page = await browser.newPage({ viewport });
       const pageErrors = [];
       const badResponses = [];
       // The browser's automatic favicon.ico probe 404s on every page in this repo
@@ -120,13 +124,23 @@ async function main() {
 
       const response = await page.goto(url, { waitUntil: "networkidle" });
       const status = response ? response.status() : 0;
-      const shotName = rel.replace(/[\\/]/g, "__").replace(/\.html$/, ".png");
+      const shotName = rel.replace(/[\\/]/g, "__").replace(/\.html$/, `__${viewport.name}.png`);
       await page.screenshot({ path: path.join(REPORT_DIR, shotName), fullPage: true });
+      const semantic = await page.evaluate(() => ({
+        h1: document.querySelectorAll("h1").length,
+        main: document.querySelectorAll("main").length,
+        overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+      }));
       await page.close();
 
-      if (status !== 200) failures.push(`${rel}: HTTP ${status}`);
-      if (badResponses.length) failures.push(`${rel}: failed resource(s) — ${badResponses.join(" | ")}`);
-      if (pageErrors.length) failures.push(`${rel}: page errors — ${pageErrors.join(" | ")}`);
+      const label = `${rel} (${viewport.name})`;
+      if (status !== 200) failures.push(`${label}: HTTP ${status}`);
+      if (badResponses.length) failures.push(`${label}: failed resource(s) — ${badResponses.join(" | ")}`);
+      if (pageErrors.length) failures.push(`${label}: page errors — ${pageErrors.join(" | ")}`);
+      if (semantic.h1 !== 1) failures.push(`${label}: expected exactly one h1, found ${semantic.h1}`);
+      if (semantic.main !== 1) failures.push(`${label}: expected exactly one main, found ${semantic.main}`);
+      if (semantic.overflow) failures.push(`${label}: horizontal overflow`);
+      }
     }
   } finally {
     await browser.close();
@@ -139,7 +153,7 @@ async function main() {
     allProblems.forEach((p) => console.error(" - " + p));
     process.exitCode = 1;
   } else {
-    console.log(`All ${htmlFiles.length} page(s) OK — no broken local links, no console/page errors.`);
+    console.log(`All ${htmlFiles.length} page(s) OK at desktop and 390px — links, landmarks, overflow, console and page-error checks passed.`);
   }
 }
 
