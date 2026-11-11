@@ -30,3 +30,4 @@ tiers apply here; this file records what they mean for this repo.
 ## Changelog
 
 - 2026-08-17 — Added tiered process doc for this repo.
+- 2026-11-11 — All pages retired to redirects to the canonical api.squadgoo.com.au/legal/* (Codex audit SG-011: privacy dated 2 Aug, terms 12 Aug, while canonical is 2026-11-10). One source of truth from now on.
